@@ -1,6 +1,6 @@
 # Dog Walk
 
-[Русский](README.ru.md)
+[Русская версия](README.ru.md) | English
 
 A native AngelOS desktop pet inspired by Cat Walk. The pixel dog continuously
 walks across its desktop widget, turns at the edges, occasionally naps, and
