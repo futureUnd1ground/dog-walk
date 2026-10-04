@@ -9,31 +9,33 @@ Item {
     property var plugin
     property string screenName
     property var barWindow
-    implicitWidth: button.implicitWidth
-    implicitHeight: button.implicitHeight
+    implicitWidth: dog.width + Theme.u * 3
+    implicitHeight: Theme.u * 13
 
-    PxButton {
-        id: button
-        compact: true
-        flat: true
-        icon: "paw-print"
-        text: root.plugin && root.plugin.get("active", false) ? "Walk" : "Dog"
+    DogSprite {
+        id: dog
+        anchors.centerIn: parent
+        plugin: root.plugin
+        pixel: Theme.u
+    }
+    MouseArea {
+        anchors.fill: parent
         onClicked: popup.toggle()
     }
-
     BarPopup {
         id: popup
         panelId: "dog-walk"
         anchorItem: root
         above: BarLayout.bottom
-        title: "Dog walk"
+        title: I18n.t("собака.exe", "dog.exe")
         icon: "paw-print"
-        contentWidth: Theme.u * 112
-        contentHeight: Theme.u * 120
-
-        WalkPanel {
+        contentWidth: Theme.u * 100
+        contentHeight: Theme.u * 48
+        DogSprite {
             anchors.centerIn: parent
             plugin: root.plugin
+            pixel: Theme.u * 3
+            excited: true
         }
     }
 }

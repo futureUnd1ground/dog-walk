@@ -1,15 +1,14 @@
 # Dog Walk
 
-An AngelOS plugin for tracking dog walks. It provides a desktop widget and a
-bar button with start, pause, resume, and finish controls. Elapsed time is
-stored in the plugin settings, and distance is estimated from elapsed time at
-4.5 km/h. No external program or network connection is required.
+[Русский](README.ru.md)
 
-## Install for development
+A native AngelOS desktop pet inspired by Cat Walk. The pixel dog continuously
+walks across its desktop widget, turns at the edges, occasionally naps, and
+reacts when clicked. A small animated dog is also available in the panel.
 
-Copy this directory to `~/.config/angelos/plugins/dog-walk/`, then reload
-AngelOS and enable **Dog Walk** in **Settings -> Plugins**. Add the desktop
-widget or enable its bar widget from the plugin settings.
+## Use
 
-Distance is an estimate, not GPS tracking. Finished walk time and estimated
-distance are kept as the last walk summary.
+Install the plugin through Community Store, reload AngelOS, then add **Dog Walk**
+with the desktop context menu: **right-click the desktop -> View -> Dog Walk**.
+The widget can be moved by its host title bar. Enable or disable naps, labels,
+speed, and size in **Settings -> Plugins -> Dog Walk**.

@@ -1,12 +1,16 @@
 {
   "id": "dog-walk",
   "name": "Dog Walk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "futureUnd1ground",
-  "description": "Track a dog walk with an elapsed timer and estimated distance.",
+  "description": {
+    "ru": "Пиксельная собака, которая гуляет по рабочему столу.",
+    "en": "A pixel dog that walks across your desktop."
+  },
   "icon": "paw-print",
-  "enabledByDefault": false,
+  "enabledByDefault": true,
   "desktopTitle": "dog-walk.exe",
   "desktopWidget": "DesktopWidget.qml",
-  "barWidget": "BarWidget.qml"
+  "barWidget": "BarWidget.qml",
+  "settings": "Settings.qml"
 }
