@@ -22,7 +22,9 @@ Item {
         repeat: true
         onTriggered: {
             const maxX = Math.max(0, root.width - dog.width);
-            const speed = Math.max(0.3, Number(root.plugin ? root.plugin.get("speed", 1.0) : 1.0));
+            const baseSpeed = Math.max(0.3, Number(root.plugin ? root.plugin.get("speed", 1.0) : 1.0));
+            const cpuFactor = 0.6 + Cpu.percent / 100 * 2.4;
+            const speed = baseSpeed * cpuFactor;
             if (root.sleepy) return;
             root.dogX += root.direction * speed;
             if (root.dogX >= maxX) {

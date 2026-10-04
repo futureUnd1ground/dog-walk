@@ -21,7 +21,7 @@ Column {
             }
         }
         SettingRow {
-            label: I18n.t("Скорость ходьбы", "Walk speed")
+            label: I18n.t("Базовая скорость", "Base speed")
             PxSlider {
                 width: parent.width
                 from: 0.3
@@ -31,6 +31,12 @@ Column {
                 suffix: "×"
                 onReleased: v => root.plugin.set("speed", v)
             }
+        }
+        PxText {
+            text: I18n.t("При высокой нагрузке CPU собака ускоряется и бежит.", "The dog speeds up and runs when CPU load rises.")
+            dim: true
+            wrapMode: Text.Wrap
+            width: parent.width
         }
         SettingRow {
             label: I18n.t("Иногда спит", "Occasional naps")
