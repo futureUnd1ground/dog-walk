@@ -4,9 +4,9 @@
 
 A native AngelOS desktop pet inspired by Cat Walk. The pixel dog continuously
 walks across its desktop widget, turns at the edges, occasionally naps, and
-reacts when clicked. Its pace and step animation speed up as CPU load rises. A
-live `CPU xx%` reading is shown on the widget. Click anywhere in the desktop
-widget to throw a ball; the dog runs to fetch it and returns to its walk. A
+reacts to a double-click. Its pace and step animation speed up as CPU load rises. A
+live `CPU xx%` reading is shown on the widget. Double-click the desktop widget
+with the left mouse button to throw a ball; the dog fetches it and returns to its walk. A
 small animated dog is also available in the panel.
 
 ## Use
