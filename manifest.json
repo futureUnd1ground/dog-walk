@@ -1,0 +1,12 @@
+{
+  "id": "dog-walk",
+  "name": "Dog Walk",
+  "version": "1.0.0",
+  "author": "futureUnd1ground",
+  "description": "Track a dog walk with an elapsed timer and estimated distance.",
+  "icon": "paw-print",
+  "enabledByDefault": false,
+  "desktopTitle": "dog-walk.exe",
+  "desktopWidget": "DesktopWidget.qml",
+  "barWidget": "BarWidget.qml"
+}
