@@ -34,7 +34,10 @@ Item {
         fill3: Theme.accent4
         light: Theme.text
         palette: ({"w": Theme.text, "o": Theme.danger, "z": Theme.accent4})
-        mirror: root.facingLeft
+        transform: Scale {
+            origin.x: sprite.width / 2
+            xScale: root.facingLeft ? -1 : 1
+        }
         y: !root.sleeping && root.frame % 2 === 1 ? 0 : root.pixel
     }
 }
