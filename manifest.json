@@ -1,7 +1,7 @@
 {
   "id": "dog-walk",
   "name": "Dog Walk",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": "futureUnd1ground",
   "description": {
     "ru": "Пиксельная собака, которая гуляет по рабочему столу.",
@@ -13,5 +13,6 @@
   "desktopWidget": "DesktopWidget.qml",
   "barWidget": "BarWidget.qml",
   "main": "Main.qml",
-  "settings": "Settings.qml"
+  "settings": "Settings.qml",
+  "repository": "https://github.com/futureUnd1ground/dog-walk"
 }
