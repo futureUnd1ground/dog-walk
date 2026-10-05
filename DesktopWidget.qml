@@ -1,7 +1,9 @@
 import QtQuick
 import qs.config
 import qs.widgets
+import qs.services
 import "."
+import "PetLogic.js" as Logic
 
 Item {
     id: root
@@ -12,14 +14,27 @@ Item {
     property real dogX: 0
     property int direction: 1
     property bool sleepy: false
-    property bool excited: false
+    readonly property bool excited: playState !== "idle"
     property string playState: "idle"
     property real homeX: 0
-    property real ballX: 0
+    property real flightStartX: 0
+    property real flightProgress: 0
     property real ballTargetX: 0
+    readonly property real ballX: playState === "return" ? dogX + (direction < 0 ? 0 : dog.width) : flightStartX + (ballTargetX - flightStartX) * flightProgress
     property bool ballVisible: false
-    property int pendingClicks: 0
-    property int seenPlayCommand: 0
+    property real seenPlayCommand: 0
+    property bool ready: false
+    readonly property bool active: visible && faceLayer && !Shell.locked
+    readonly property real maxX: Math.max(0, width - dog.width)
+    readonly property real baseSpeed: Logic.bounded(plugin ? plugin.get("speed", 1) : 1, 1, 0.3, 3)
+    readonly property real dogSize: Logic.bounded(plugin ? plugin.get("size", 2) : 2, 2, 1, 3)
+    readonly property bool napsEnabled: plugin ? !!plugin.get("nap", true) : true
+    readonly property real playCommand: Logic.bounded(plugin ? plugin.get("playCommandId", 0) : 0, 0, 0, Number.MAX_SAFE_INTEGER)
+    clip: true
+
+    onMaxXChanged: if (ready) clampPositions()
+    onNapsEnabledChanged: if (!napsEnabled) sleepy = false
+    onPlayCommandChanged: consumePlayCommand()
 
     implicitWidth: Theme.u * 180
     implicitHeight: Theme.u * 56
@@ -33,107 +48,104 @@ Item {
             }
             ancestor = ancestor.parent;
         }
-        if (faceLayer && plugin)
-            seenPlayCommand = Number(plugin.get("playCommandId", 0));
+        seenPlayCommand = playCommand;
+        ready = true;
+        clampPositions();
+    }
+
+    function clampBall(value) {
+        if (width < dog.width)
+            return Math.max(0, width / 2);
+        return Logic.bounded(value, width / 2, dog.width / 2, width - dog.width / 2);
+    }
+
+    function clampPositions() {
+        dogX = Logic.bounded(dogX, 0, 0, maxX);
+        homeX = Logic.bounded(homeX, 0, 0, maxX);
+        ballTargetX = clampBall(ballTargetX);
+        flightStartX = clampBall(flightStartX);
+    }
+
+    function consumePlayCommand() {
+        if (!ready || !faceLayer || playCommand === seenPlayCommand)
+            return;
+        seenPlayCommand = playCommand;
+        if (playCommand > 0 && active)
+            startFetch(plugin ? plugin.get("playTargetX", width / 2) : width / 2);
     }
 
     function startFetch(targetX) {
-        if (playState !== "idle")
+        if (!active || playState !== "idle")
             return;
-        excited = true;
-        excitement.restart();
         sleepy = false;
-        wake.stop();
+        clampPositions();
         homeX = dogX;
-        ballX = dogX + dog.width / 2;
-        ballTargetX = Math.max(dog.width / 2, Math.min(width - dog.width / 2, targetX));
+        flightStartX = dogX + dog.width / 2;
+        ballTargetX = clampBall(targetX);
+        flightProgress = 0;
         ballVisible = true;
         playState = "throw";
-        ballFlight.to = ballTargetX;
         ballFlight.restart();
     }
 
-    Timer {
-        interval: 40
-        running: root.visible && root.faceLayer
-        repeat: true
-        onTriggered: {
-            const maxX = Math.max(0, root.width - dog.width);
-            const baseSpeed = Math.max(0.3, Number(root.plugin ? root.plugin.get("speed", 1.0) : 1.0));
-            const cpuFactor = 0.6 + Cpu.percent / 100 * 2.4;
-            const speed = baseSpeed * cpuFactor * (root.playState === "idle" ? 1 : 1.6);
-            if (root.playState === "idle") {
-                if (root.sleepy) return;
-                root.dogX += root.direction * speed;
-                if (root.dogX >= maxX) {
-                    root.dogX = maxX;
-                    root.direction = -1;
-                } else if (root.dogX <= 0) {
-                    root.dogX = 0;
-                    root.direction = 1;
-                }
-            } else {
-                if (root.playState === "throw")
-                    return;
-                const target = root.playState === "fetch" ? root.ballTargetX - dog.width / 2 : root.homeX;
-                const delta = target - root.dogX;
-                root.direction = delta < 0 ? -1 : 1;
-                if (Math.abs(delta) <= speed) {
-                    root.dogX = Math.max(0, Math.min(maxX, target));
-                    if (root.playState === "fetch") {
-                        root.ballVisible = false;
-                        root.playState = "return";
-                    } else {
-                        root.playState = "idle";
-                        root.excited = false;
-                    }
-                } else {
-                    root.dogX += root.direction * speed;
-                }
-            }
+    function beginNap() {
+        if (active && napsEnabled && playState === "idle")
+            sleepy = true;
+    }
+
+    function advance(seconds) {
+        if (!active || sleepy || playState === "throw")
+            return;
+        const dt = Logic.bounded(seconds, 0, 0, 0.1);
+        const cpuFactor = 0.6 + Logic.bounded(Cpu.percent, 0, 0, 100) / 100 * 2.4;
+        const step = baseSpeed * cpuFactor * 25 * dt * (playState === "idle" ? 1 : 1.6);
+        if (playState === "idle") {
+            dogX = Logic.bounded(dogX + direction * step, 0, 0, maxX);
+            if (dogX >= maxX) direction = -1;
+            else if (dogX <= 0) direction = 1;
+            return;
         }
+        const target = playState === "fetch" ? Logic.bounded(ballTargetX - dog.width / 2, 0, 0, maxX) : homeX;
+        const delta = target - dogX;
+        direction = delta < 0 ? -1 : 1;
+        if (Math.abs(delta) <= step) {
+            dogX = target;
+            if (playState === "fetch") {
+                playState = "return";
+            } else {
+                playState = "idle";
+                ballVisible = false;
+            }
+        } else {
+            dogX = Logic.bounded(dogX + direction * step, 0, 0, maxX);
+        }
+    }
+
+    FrameAnimation {
+        running: root.active && !root.sleepy && root.playState !== "throw"
+        onTriggered: root.advance(frameTime)
     }
     NumberAnimation {
         id: ballFlight
         target: root
-        property: "ballX"
+        property: "flightProgress"
+        from: 0
+        to: 1
         duration: 520
+        paused: running && !root.active
         easing.type: Easing.OutQuad
         onFinished: root.playState = "fetch"
     }
     Timer {
-        interval: 80
-        running: root.visible && root.faceLayer
-        repeat: true
-        onTriggered: {
-            if (!root.plugin)
-                return;
-            const commandId = Number(root.plugin.get("playCommandId", 0));
-            if (commandId <= root.seenPlayCommand)
-                return;
-            root.seenPlayCommand = commandId;
-            root.startFetch(Number(root.plugin.get("playTargetX", root.width / 2)));
-        }
-    }
-    Timer {
-        id: nap
         interval: 5200
-        running: root.visible && root.faceLayer && root.plugin && root.plugin.get("nap", true)
+        running: root.active && root.napsEnabled && !root.sleepy && root.playState === "idle"
         repeat: true
-        onTriggered: {
-            root.sleepy = true;
-            wake.start();
-        }
+        onTriggered: root.beginNap()
     }
     Timer {
-        id: wake
         interval: 1800
+        running: root.active && root.sleepy
         onTriggered: root.sleepy = false
-    }
-    Timer {
-        id: excitement
-        interval: 1200
-        onTriggered: root.excited = false
     }
 
     Rectangle {
@@ -148,7 +160,7 @@ Item {
         id: dog
         x: root.dogX
         anchors.bottom: parent.bottom
-        pixel: Theme.u * (root.plugin ? root.plugin.get("size", 2) : 2)
+        pixel: Math.max(1, Math.round(Theme.u * root.dogSize))
         plugin: root.plugin
         facingLeft: root.direction < 0
         sleeping: root.sleepy
@@ -173,8 +185,8 @@ Item {
     }
     Rectangle {
         visible: root.faceLayer && root.ballVisible
-        x: root.ballX
-        y: parent.height - dog.height - Theme.u * 3 - Math.abs(Math.sin(ballFlight.duration ? ballFlight.currentTime / ballFlight.duration * Math.PI : 0)) * Theme.u * 8
+        x: root.ballX - width / 2
+        y: root.playState === "return" ? parent.height - dog.height * 0.4 : parent.height - height - Math.sin(root.flightProgress * Math.PI) * Theme.u * 8
         width: Theme.u * 3
         height: Theme.u * 3
         color: Theme.accent
@@ -184,25 +196,13 @@ Item {
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
-        onClicked: mouse => {
-            if (root.faceLayer)
-                return;
-            if (root.pendingClicks === 0) {
-                root.pendingClicks = 1;
-                clickReset.restart();
-                return;
-            }
-            root.pendingClicks = 0;
-            clickReset.stop();
-            if (root.plugin) {
+        onDoubleClicked: mouse => {
+            if (root.faceLayer) {
+                root.startFetch(mouse.x);
+            } else if (root.plugin) {
                 root.plugin.set("playTargetX", mouse.x);
-                root.plugin.set("playCommandId", Date.now());
+                root.plugin.set("playCommandId", Math.max(Date.now(), root.playCommand + 1));
             }
         }
-    }
-    Timer {
-        id: clickReset
-        interval: 420
-        onTriggered: root.pendingClicks = 0
     }
 }

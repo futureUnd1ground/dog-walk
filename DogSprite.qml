@@ -1,8 +1,10 @@
 import QtQuick
 import qs.config
 import qs.widgets
+import qs.services
 import "."
 import "DogFrames.js" as Frames
+import "PetLogic.js" as Logic
 
 Item {
     id: root
@@ -12,14 +14,14 @@ Item {
     property bool sleeping: false
     property bool excited: false
     property int frame: 0
-    property color fur: plugin && plugin.get("fur", "#c9824a")
+    property color fur: Logic.furColor(plugin ? plugin.get("fur", "#c9824a") : "#c9824a")
 
     implicitWidth: sprite.width
     implicitHeight: sprite.height + pixel
 
     Timer {
         interval: root.sleeping ? 720 : Math.max(75, (root.excited ? 230 : 360) - Cpu.percent * 2.6)
-        running: root.visible
+        running: root.visible && !Shell.locked
         repeat: true
         onTriggered: root.frame = (root.frame + 1) % 5
     }

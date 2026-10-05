@@ -1,10 +1,12 @@
 import QtQuick
 import qs.config
 import qs.widgets
+import "PetLogic.js" as Logic
 
 Column {
     id: root
     property var plugin
+    property bool invalidColor: false
     width: parent ? parent.width : 400
     spacing: Theme.u * 4
 
@@ -44,6 +46,24 @@ Column {
                 checked: root.plugin ? root.plugin.get("nap", true) : true
                 onToggled: v => root.plugin.set("nap", v)
             }
+        }
+        SettingRow {
+            label: I18n.t("Цвет шерсти (#RRGGBB)", "Fur color (#RRGGBB)")
+            PxField {
+                width: Theme.u * 50
+                text: Logic.furColor(root.plugin ? root.plugin.get("fur", "#c9824a") : "#c9824a")
+                onAccepted: {
+                    const color = text.trim();
+                    root.invalidColor = !/^#[0-9a-fA-F]{6}$/.test(color);
+                    if (!root.invalidColor && root.plugin)
+                        root.plugin.set("fur", color);
+                }
+            }
+        }
+        PxText {
+            visible: root.invalidColor
+            text: I18n.t("Введи цвет вида #c9824a и нажми Enter.", "Enter a color such as #c9824a and press Enter.")
+            color: Theme.danger
         }
         SettingRow {
             label: I18n.t("Подпись", "Label")
